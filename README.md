@@ -14,7 +14,7 @@ uploaded HTML guide into a real, buildable Eclipse (Maven multi-module) project.
 | `order-service` | 8082 | Order CRUD, Redis cache, publishes Kafka `order-events` (Postgres + Redis + Kafka) |
 | `notification-service` | 8084 | Consumes `order-events` from Kafka, stores/serves notifications (Postgres + Kafka) |
 
-## Architecture
+## Architecture (Saga Orchestration + Transactional Outbox)
 
 ```mermaid
 graph TD
@@ -54,14 +54,16 @@ graph TD
     OrderService -->|persists| PG
     NotificationService -->|persists| PG
     
-    OrderService -->|publishes 'order-events'| Kafka
-    Kafka -->|consumes 'order-events'| NotificationService
+    OrderService -->|Outbox Poller publishes<br/>'product-commands' & 'notification-commands'| Kafka
+    Kafka -->|consumes 'product-commands'| ProductService
+    ProductService -->|publishes 'product-replies'| Kafka
+    Kafka -->|consumes 'product-replies' (Saga Orchestrator)| OrderService
+    Kafka -->|consumes 'notification-commands'| NotificationService
     Kafka -->|coordinates| ZK
     
     classDef infra fill:#f9f,stroke:#333,stroke-width:2px;
     class PG,Redis,Kafka,ZK infra;
 ```
-
 
 ## Database configuration (as requested)
 

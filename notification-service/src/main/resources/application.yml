@@ -19,14 +19,23 @@ spring:
     show-sql: false
   kafka:
     bootstrap-servers: ${KAFKA_BROKERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
     consumer:
       group-id: notification-group
       auto-offset-reset: earliest
+      enable-auto-commit: false
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      isolation-level: read_committed
       properties:
-        spring.json.trusted.packages: com.demo.notification.event
-        spring.json.value.default.type: com.demo.notification.event.OrderEvent
+        spring.json.trusted.packages: "*"
         spring.json.use.type.headers: false
 
 eureka:
