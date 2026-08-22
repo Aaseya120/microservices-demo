@@ -10,9 +10,9 @@ uploaded HTML guide into a real, buildable Eclipse (Maven multi-module) project.
 | `service-registry` | 8761 | Eureka service registry |
 | `api-gateway` | 8080 | Spring Cloud Gateway — routing, JWT check, rate limiting, circuit breaker |
 | `user-service` | 8081 | User CRUD (Postgres) |
-| `product-service` | 8083 | Product catalog CRUD + Redis caching (Postgres + Redis) |
-| `order-service` | 8082 | Order CRUD, Redis cache, publishes Kafka `order-events` (Postgres + Redis + Kafka) |
-| `notification-service` | 8084 | Consumes `order-events` from Kafka, stores/serves notifications (Postgres + Kafka) |
+| `product-service` | 8083 | Product catalog CRUD + Redis caching, handles 'product-commands' (Postgres + Redis + Kafka) |
+| `order-service` | 8082 | Order CRUD, Redis cache, Saga Orchestrator, Transactional Outbox (Postgres + Redis + Kafka) |
+| `notification-service` | 8084 | Consumes 'notification-commands' from Kafka, stores/serves notifications (Postgres + Kafka) |
 
 ## Architecture (Saga Orchestration + Transactional Outbox)
 
