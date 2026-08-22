@@ -57,7 +57,7 @@ graph TD
     OrderService -->|Outbox Poller publishes<br/>'product-commands' & 'notification-commands'| Kafka
     Kafka -->|consumes 'product-commands'| ProductService
     ProductService -->|publishes 'product-replies'| Kafka
-    Kafka -->|consumes 'product-replies' (Saga Orchestrator)| OrderService
+    Kafka -->|consumes 'product-replies' - Saga Orchestrator| OrderService
     Kafka -->|consumes 'notification-commands'| NotificationService
     Kafka -->|coordinates| ZK
     
@@ -198,15 +198,8 @@ were written for this project following the same conventions as `order-service`
 (records for requests, `ApiResponse<T>` envelope, `GlobalExceptionHandler`, Lombok,
 constructor injection).
 
-The guide's dedicated Kafka section (`KafkaConfig`, `OrderEvent` with a `timestamp`
-field, `OrderEventProducer` with async delivery-result logging, and a
-`NotificationConsumer` that switches on `eventType` and logs partition/offset) is
-also carried over in full — `order-service` declares the `order-events` and
-`notifications` topics and publishes through the dedicated producer;
-`notification-service`'s listener matches the guide's switch/log pattern. The one
-addition beyond the guide: the listener also persists a `Notification` row per
-event, so `GET /api/notifications/user/{id}` has real data to return — the guide
-only stubbed out `sendEmail(...)`.
+The original guide used a simple Event Choreography (`order-events`), but this project has been upgraded to a full **Saga Orchestrator** pattern with the **Transactional Outbox** pattern. 
+`order-service` implements an `OutboxPoller` to reliably publish `ReserveInventoryCommand`s to `product-commands`, and `ProductService` replies to `product-replies` with success/failure, which `OrderSagaOrchestrator` uses to confirm or cancel the order. Finally, it sends a `SendNotificationCommand` to `notification-service`. This ensures strong distributed transaction guarantees across the services.
 
 Not included (deployment/CI concerns, not application code): the GitHub Actions
 pipeline, the AWS ALB Ingress manifest, and the `k8s/` directory tree beyond the
