@@ -1,0 +1,18 @@
+server:
+  port: 8082
+
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          secret: ${JWT_SECRET:change-this-demo-secret-change-this-demo-secret}
+
+logging:
+  level:
+    com.demo.order: DEBUG
+    org.springframework.security: TRACE
+
+app:
+  business:
+    discount-rate: 15.5
