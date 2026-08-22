@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: order-service
+  config:
+    import: "optional:configserver:http://localhost:8888"
+
+  kafka:
+    bootstrap-servers: localhost:9092
+  datasource:
+    url: jdbc:postgresql://localhost:5432/orderdb
+    username: postgres
+    password: password
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+  data:
+    redis:
+      host: localhost
+      port: 6379

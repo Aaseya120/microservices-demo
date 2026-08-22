@@ -1,0 +1,52 @@
+# Addition beyond the guide's k8s/ tree (which only listed api-gateway,
+# order-service, user-service, product-service under deployments/) — every
+# other service depends on Eureka being reachable in-cluster, so it needs
+# a manifest too. Single replica: Eureka peers require extra config to run
+# >1 replica safely, out of scope for this demo.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-registry
+  namespace: microservices
+  labels:
+    app: service-registry
+    version: "1.0"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: service-registry
+  template:
+    metadata:
+      labels:
+        app: service-registry
+    spec:
+      containers:
+        - name: service-registry
+          image: 123456789.dkr.ecr.ap-south-1.amazonaws.com/service-registry:1.0.0
+          ports:
+            - containerPort: 8761
+          resources:
+            requests: { memory: "256Mi", cpu: "250m" }
+            limits:   { memory: "512Mi", cpu: "500m" }
+          livenessProbe:
+            httpGet: { path: /actuator/health, port: 8761 }
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 8761 }
+            initialDelaySeconds: 20
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-registry
+  namespace: microservices
+spec:
+  selector:
+    app: service-registry
+  ports:
+    - port: 8761
+      targetPort: 8761
+  type: ClusterIP

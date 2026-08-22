@@ -1,0 +1,74 @@
+# Addition beyond the guide's k8s/ tree, for the same reason as
+# service-registry.yaml — notification-service is part of this reactor
+# and needs to run for the order-events flow to work end-to-end.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: microservices
+  labels:
+    app: notification-service
+    version: "1.0"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: notification-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: notification-service
+    spec:
+      containers:
+        - name: notification-service
+          image: 123456789.dkr.ecr.ap-south-1.amazonaws.com/notification-service:1.0.0
+          ports:
+            - containerPort: 8084
+          env:
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef: { name: app-config, key: db.host }
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef: { name: app-config, key: db.name }
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef: { name: db-secret, key: username }
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef: { name: db-secret, key: password }
+            - name: KAFKA_BROKERS
+              valueFrom:
+                configMapKeyRef: { name: app-config, key: kafka.brokers }
+            - name: EUREKA_URL
+              valueFrom:
+                configMapKeyRef: { name: app-config, key: eureka.url }
+          resources:
+            requests: { memory: "256Mi", cpu: "250m" }
+            limits:   { memory: "512Mi", cpu: "500m" }
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: 8084 }
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: 8084 }
+            initialDelaySeconds: 20
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: microservices
+spec:
+  selector:
+    app: notification-service
+  ports:
+    - port: 80
+      targetPort: 8084
+  type: ClusterIP

@@ -1,0 +1,19 @@
+# Declarative form of the guide's:
+#   kubectl create configmap app-config \
+#     --from-literal=redis.host=redis-service \
+#     --from-literal=kafka.brokers=kafka-service:9092 \
+#     -n microservices
+#
+# Extended with db.host / db.name / eureka.url so every service in this
+# reactor (not just order-service) has what it needs from one ConfigMap.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: microservices
+data:
+  redis.host: redis-service
+  kafka.brokers: kafka-service:9092
+  db.host: postgres-service
+  db.name: micro
+  eureka.url: http://service-registry:8761/eureka/

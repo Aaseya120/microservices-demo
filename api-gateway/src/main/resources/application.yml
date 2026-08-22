@@ -1,0 +1,112 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      default-filters:
+        - name: CircuitBreaker
+          args:
+            name: globalCircuitBreaker
+            fallbackUri: forward:/fallback
+      routes:
+        # User Service
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/users/**
+          filters:
+            - StripPrefix=0
+            - name: JwtAuthFilter
+            - name: AddRequestHeader
+              args:
+                name: X-Gateway-Source
+                value: api-gateway
+
+        # Order Service
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/orders/**
+            - Method=GET,POST,PUT,DELETE
+          filters:
+            - StripPrefix=0
+            - name: JwtAuthFilter
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 50
+                redis-rate-limiter.burstCapacity: 100
+
+        # Product Service — public read endpoints (no JWT required)
+        - id: product-service-public
+          uri: lb://product-service
+          predicates:
+            - Path=/api/products/**
+            - Method=GET
+
+        # Product Service — writes require auth
+        - id: product-service-admin
+          uri: lb://product-service
+          predicates:
+            - Path=/api/products/**
+            - Method=POST,PUT,DELETE
+          filters:
+            - name: JwtAuthFilter
+
+        # Notification Service
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/notifications/**
+          filters:
+            - name: JwtAuthFilter
+
+gateway:
+  jwt:
+    secret: ${JWT_SECRET:change-this-demo-secret-change-this-demo-secret}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      globalCircuitBreaker:
+        registerHealthIndicator: true
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+  timelimiter:
+    instances:
+      globalCircuitBreaker:
+        timeoutDuration: 4s
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
