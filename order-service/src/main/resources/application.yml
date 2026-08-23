@@ -1,4 +1,6 @@
 spring:
+  profiles:
+    active: dev
   application:
     name: order-service
   config:
@@ -37,3 +39,4 @@ spring:
     redis:
       host: localhost
       port: 6379
+

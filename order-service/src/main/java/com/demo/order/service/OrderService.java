@@ -24,20 +24,24 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final OutboxEventRepository outboxEventRepository;
     private final ObjectMapper objectMapper;
+    private final com.demo.order.client.ProductClient productClient;
 
     @Transactional
     @SneakyThrows
     public Order createOrder(OrderRequest req) {
-        Order order = Order.builder()
+        var product = productClient.getProduct(req.productId());
+        var calculatedPrice = product.price().multiply(new BigDecimal(req.qty()));
+
+        var order = Order.builder()
                 .userId(req.userId())
                 .productId(req.productId())
                 .quantity(req.qty())
-                .totalPrice(new BigDecimal(req.qty() * 100)) // Mock price calculation
+                .totalPrice(calculatedPrice)
                 .build();
 
-        order = orderRepository.save(order);
+        var savedOrder = orderRepository.save(order);
 
-        ReserveInventoryCommand command = new ReserveInventoryCommand(order.getId(), order.getProductId(), order.getQuantity());
+        var command = new ReserveInventoryCommand(savedOrder.getId(), savedOrder.getProductId(), savedOrder.getQuantity());
         OutboxEvent outboxEvent = OutboxEvent.builder()
                 .aggregateId(order.getId())
                 .aggregateType("Order")
@@ -47,7 +51,7 @@ public class OrderService {
 
         outboxEventRepository.save(outboxEvent);
 
-        return order;
+        return savedOrder;
     }
 
     @Transactional(readOnly = true)

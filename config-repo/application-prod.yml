@@ -1,0 +1,24 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:database.internal.prod}:${DB_PORT:5432}/${DB_NAME:micro}
+    username: ${DB_USER:prod_user}
+    password: ${DB_PASS:prod_pass}
+    hikari:
+      maximum-pool-size: 20
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://discovery.internal.prod:8761/eureka/}
+
+logging:
+  level:
+    root: WARN
+    com.demo: INFO

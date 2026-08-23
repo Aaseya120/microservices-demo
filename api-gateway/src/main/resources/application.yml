@@ -2,6 +2,8 @@ server:
   port: 8080
 
 spring:
+  profiles:
+    active: dev
   application:
     name: api-gateway
   data:
@@ -110,3 +112,4 @@ springdoc:
     path: /swagger-ui.html
   api-docs:
     path: /v3/api-docs
+

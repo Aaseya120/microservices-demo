@@ -2,6 +2,8 @@ server:
   port: 8761
 
 spring:
+  profiles:
+    active: dev
   application:
     name: service-registry
 
@@ -18,3 +20,4 @@ management:
     web:
       exposure:
         include: health,info
+
