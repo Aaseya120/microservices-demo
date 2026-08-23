@@ -1,6 +1,7 @@
 package com.demo.banking.config;
 
-import com.demo.banking.client.CoreBankingSoapClient;
+import com.demo.banking.dto.TransactionRequest;
+import com.demo.banking.service.BankingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
@@ -24,7 +25,7 @@ public class BatchConfig {
 
     private final JobRepository jobRepository;
     private final PlatformTransactionManager transactionManager;
-    private final CoreBankingSoapClient soapClient;
+    private final BankingService bankingService;
 
     @Bean
     public Job reconciliationJob() {
@@ -46,13 +47,19 @@ public class BatchConfig {
             log.info("Starting End-of-Day Reconciliation Batch Job...");
 
             // In a real scenario, we'd read from a database or file in chunks.
-            // For demo purposes, we process a single mock transaction via our SoapClient.
+            // For demo purposes, we process a single mock transaction via our Service.
             String mockTransactionId = UUID.randomUUID().toString();
             
-            log.info("Processing transaction {} via SOAP...", mockTransactionId);
+            log.info("Processing transaction {} via BankingService...", mockTransactionId);
+            
+            TransactionRequest request = new TransactionRequest();
+            request.setTransactionId(mockTransactionId);
+            request.setAccountId("ACC123");
+            request.setAmount(new BigDecimal("100.00"));
+            request.setType("EOD_SETTLEMENT");
             
             // Blocking wait here because Spring Batch Tasklet is synchronous.
-            var response = soapClient.processTransaction(mockTransactionId, "ACC123", new BigDecimal("100.00"), "EOD_SETTLEMENT").block();
+            var response = bankingService.processTransaction(request).block();
 
             log.info("Reconciliation successful for {}. Status: {}", mockTransactionId, response.getStatus());
 

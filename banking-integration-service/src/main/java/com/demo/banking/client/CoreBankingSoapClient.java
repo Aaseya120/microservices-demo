@@ -5,14 +5,16 @@ import com.demo.banking.wsdl.GetAccountBalanceResponse;
 import com.demo.banking.wsdl.ProcessTransactionRequest;
 import com.demo.banking.wsdl.ProcessTransactionResponse;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.ws.client.core.WebServiceTemplate;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+import com.demo.banking.dto.TransactionRequest;
+
 import java.math.BigDecimal;
 
-@Service
+@Component
 @SuppressWarnings("unused")
 public class CoreBankingSoapClient {
 
@@ -40,18 +42,18 @@ public class CoreBankingSoapClient {
         }).subscribeOn(Schedulers.boundedElastic());
     }
 
-    public Mono<ProcessTransactionResponse> processTransaction(String transactionId, String accountId, BigDecimal amount, String type) {
+    public Mono<ProcessTransactionResponse> processTransaction(TransactionRequest txRequest) {
         var request = new ProcessTransactionRequest();
-        request.setTransactionId(transactionId);
-        request.setAccountId(accountId);
-        request.setAmount(amount);
-        request.setType(type);
+        request.setTransactionId(txRequest.getTransactionId());
+        request.setAccountId(txRequest.getAccountId());
+        request.setAmount(txRequest.getAmount());
+        request.setType(txRequest.getType());
 
         return Mono.fromCallable(() -> {
             // return (ProcessTransactionResponse) webServiceTemplate.marshalSendAndReceive(coreBankingUrl, request);
             ProcessTransactionResponse mockResponse = new ProcessTransactionResponse();
             mockResponse.setStatus("SUCCESS");
-            mockResponse.setTransactionId(transactionId);
+            mockResponse.setTransactionId(txRequest.getTransactionId());
             return mockResponse;
         }).subscribeOn(Schedulers.boundedElastic());
     }
